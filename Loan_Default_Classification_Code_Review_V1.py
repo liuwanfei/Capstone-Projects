@@ -12,10 +12,14 @@ get_ipython().magic(u'matplotlib inline')
 
 import pandas as pd
 import numpy as np
+
 from scipy import stats, integrate
 import scipy.stats as stats
+
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
+
+from IPython.core import display as ICD
 
 # In[4]:
 
@@ -166,7 +170,7 @@ df.isnull().any()
 
 
 for feature in features:
-    print(percent_format(agg_column(df, feature), 1))
+    ICD.display(percent_format(agg_column(df, feature), 1))
 
 
 # In[13]:
@@ -452,33 +456,13 @@ for name, model in models:
     #msg = "%s: %f" % (name, roc_auc_score)
 
 
-# In[41]:
-
-
-# prepare configuration for cross validation test harness
-seed = 7
-
-# Compare accuracy score among different models
-results = []
-names = []
-scoring = 'accuracy'
-for name, model in models:
-	kfold = model_selection.KFold(n_splits=10, random_state=seed)
-	cv_results = model_selection.cross_val_score(model, X_train, y_train, cv=kfold, scoring=scoring)
-	results.append(cv_results)
-	names.append(name)
-	msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
-	print(msg)
-    
-# boxplot algorithm comparison
-fig = plt.figure()
-fig.suptitle('Algorithm Accuracy Comparison')
-ax = fig.add_subplot(111)
-plt.boxplot(results)
-ax.set_xticklabels(names)
-plt.show()
-
-
+"""
+Interpret this part!
+What is the ROC AUC score?
+Which algorithms are better?
+Why does the performance of some of the algorithms look similar?
+Does this plot indicate other work should be done?
+"""
 # In[42]:
 
 
@@ -512,7 +496,10 @@ plt.show()
   .loan_id.nunique()/df.groupby('Ever_Delinquent').loan_id.nunique()
 ).mul(100).round(1).astype(str) + '%'
 
-
+"""
+Regularization should be done as part of the model
+selection process above
+"""
 # ### Perform Regularization On Logistic Regression Classifier
 
 # In[44]:
@@ -521,13 +508,25 @@ plt.show()
 l1_penalty = [0, 0.1, 0.5, 1, 2, 5, 10, 20, 30, 50, 60, 80, 90, 100]
 regularization_dic = {}
 
+"""
+Be mindful of indentation in python. This loop isn't doing what you
+what it to. It's initializing many clf objects based on the l1_penalty
+then returning the last one, which you're fitting on. That's why your
+regularization_dic has 1 value at the max penalty instead of 1 key
+per l1_penalty.
+"""
 for penalty_param in l1_penalty:
     clf = LogisticRegression(penalty = 'l1', C = penalty_param)
-clf.fit(X_train, y_train)
-y_pred = clf.predict(X_test)
-regularization_dic[penalty_param] = roc_auc_score(y_test, y_pred)
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+    regularization_dic[penalty_param] = roc_auc_score(y_test, y_pred)
 
 
+"""
+Before sharing a notebook it's good practice to clear all the output
+and re-run all the cells. That ensures some else can reproduce the work 
+and will help you avoid problems caused by out-of-order code.
+"""
 # In[55]:
 
 
@@ -552,7 +551,20 @@ print(msg)
 y_pred = clf.predict(X_test)
 y_pred
 
+"""
+This _looks_ like it'll be your Evaluation section. If so, call it out
+as such. Here are a few recommendations on what to evaluate:
+- Show the most important features and discuss them
+- Plot the ROC of the training set vs. the test set
+- Plot the distribution (KDE) of scores on the train vs. test set
+- Plot the distribution (KDE) of scores for the "1" vs. "0" class
+on the test set get a sense of how well the classifier discriminates 
 
+Then bring it all home and evalute the actual business problem.
+Based on your prediction, the value of the home, and your assumption
+based on how early delinquencies translate to default - how does
+your model do versus a naive estimate?
+"""
 # In[47]:
 
 
