@@ -2,5 +2,6 @@
  
 
 - Predict Loan's Ever Delinquent Probablity
-  - Please find details in "Loan Ever Delinquent Prediction Project Write Up.pdf"
+  - Used machine learning to predit loan's ever delinquent probablity
+  - Please find the write up in "Loan Ever Delinquent Prediction Project Write Up.pdf"
  
