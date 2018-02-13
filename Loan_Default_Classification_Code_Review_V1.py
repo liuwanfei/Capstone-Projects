@@ -12,22 +12,14 @@ get_ipython().magic(u'matplotlib inline')
 
 import pandas as pd
 import numpy as np
+
 from scipy import stats, integrate
 import scipy.stats as stats
+
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 
-
-# In[3]:
-
-
-# rename columns if needed
-col_names = ['loan_id','ory','orig_upb','loan_purp','prop_type',
-             'multi_unit','orig_chn','occ_stat','dti_new',
-             'FICO_new', 'ltv_new', 'fhb_flag', 'no_bor', 
-             'prop_type_eligible', 'MI_chl', 'dr_time_default',
-             'Ever_Delinquent', 'current_status', 'claim_flag']
-
+from IPython.core import display as ICD
 
 # In[4]:
 
@@ -44,11 +36,84 @@ def read_loan(path, filename):
     '''
     return df
 
+def agg_column(df, col_name):
+    '''
+    Args: 
+        df: Data frame the aggregation calculation is based on 
+        col_name: Name of aggregated column
+    Returns:
+        agg_series: The return is a data series. All calcuated values <=1
+    '''
+    agg_series = df.groupby(col_name).loan_id.nunique() / df.loan_id.nunique()
+    return agg_series
+
+def percent_format(float_series, rename_col_index):
+    '''
+    Args: 
+        float_series: Data series with float value
+        rename_col_index: The index of column which needs 
+                          to be renamed for clarification
+    Returns:
+        percent_df: The return is a data frame with float formated as %
+    '''
+    percent = float_series.mul(100).round(1).astype(str) + '%'
+    percent_df = pd.DataFrame(percent).reset_index()
+    percent_df.rename(columns={percent_df.columns[rename_col_index]: "percent" }, inplace=True)
+    #percent_df.rename(columns = {'loan_id':'percent'}, inplace=True)  # Alt: rename a column by name
+    return percent_df
+
+# In[15]:
+
+
+# Create histogram method
+def histogram(df, title_name):
+    '''
+    Args: 
+        df: Data frame or data series for plotting histogram on feature value distribution 
+        title_name: Name of histogram
+    Returns:
+        Histogram plot using matplotlib
+    '''
+    return df.plot(kind='bar', title=title_name).set(xlabel='\n' + title_name, ylabel='% to Total')
+
+# In[20]:
+
+
+# Alternative way to create histogram method using feature as parameter
+def histogram_alt(feature):
+    df = distr_dict[feature]
+    title_name = feature.split('_', 1)[0].upper()
+    return df.plot(kind='bar', title=title_name).set(xlabel=title_name, ylabel='% to Total')
+
+
+
+# In[3]:
+
+
+# rename columns if needed
+col_names = ['loan_id','ory','orig_upb','loan_purp','prop_type',
+             'multi_unit','orig_chn','occ_stat','dti_new',
+             'FICO_new', 'ltv_new', 'fhb_flag', 'no_bor', 
+             'prop_type_eligible', 'MI_chl', 'dr_time_default',
+             'Ever_Delinquent', 'current_status', 'claim_flag']
+
+# In[12]:
+
+
+features = ['ory', 'loan_purp', 'prop_type', 'multi_unit', 'orig_chn', 
+            'occ_stat', 'dti_new', 'FICO_new', 'ltv_new', 'fhb_flag',
+            'no_bor', 'prop_type_eligible', 'MI_chl', 'Ever_Delinquent',
+            'claim_flag']
+
+
+loan_file = "C:\\Users\\SunLix\\Data\\Project\\Default Classification","Loan_Orig_2010_2013.txt")
+
+
 
 # In[5]:
 
 
-df = read_loan("C:\\Users\\SunLix\\Data\\Project\\Default Classification","Loan_Orig_2010_2013.txt")
+df = read_loan(loan_file)
 
 
 # In[6]:
@@ -86,37 +151,6 @@ df.dtypes
 #check any column with NAN value
 df.isnull().any()
 
-
-# In[11]:
-
-
-def agg_column(df, col_name):
-    '''
-    Args: 
-        df: Data frame the aggregation calculation is based on 
-        col_name: Name of aggregated column
-    Returns:
-        agg_series: The return is a data series. All calcuated values <=1
-    '''
-    agg_series = df.groupby(col_name).loan_id.nunique() / df.loan_id.nunique()
-    return agg_series
-
-def percent_format(float_series, rename_col_index):
-    '''
-    Args: 
-        float_series: Data series with float value
-        rename_col_index: The index of column which needs 
-                          to be renamed for clarification
-    Returns:
-        percent_df: The return is a data frame with float formated as %
-    '''
-    percent = float_series.mul(100).round(1).astype(str) + '%'
-    percent_df = pd.DataFrame(percent).reset_index()
-    percent_df.rename(columns={percent_df.columns[rename_col_index]: "percent" }, inplace=True)
-    #percent_df.rename(columns = {'loan_id':'percent'}, inplace=True)  # Alt: rename a column by name
-    return percent_df
-
-
 # ### Features
 # - **Loan Origination Year**
 # - **Loan Purpose**: Purchase(P), Refinance with Cash-Out(C), Refinance Pay-off Existing Lien(N)
@@ -134,16 +168,9 @@ def percent_format(float_series, rename_col_index):
 # - **Every Deliquenty Flag**
 # - **Claim Flag**
 
-# In[12]:
-
-
-features = ['ory', 'loan_purp', 'prop_type', 'multi_unit', 'orig_chn', 
-            'occ_stat', 'dti_new', 'FICO_new', 'ltv_new', 'fhb_flag',
-            'no_bor', 'prop_type_eligible', 'MI_chl', 'Ever_Delinquent',
-            'claim_flag']
 
 for feature in features:
-    print(percent_format(agg_column(df, feature), 1))
+    ICD.display(percent_format(agg_column(df, feature), 1))
 
 
 # In[13]:
@@ -167,20 +194,6 @@ for feature in features:
     distr_series = agg_column(df, feature)
     distr_dict[feature] = distr_series
 
-
-# In[15]:
-
-
-# Create histogram method
-def histogram(df, title_name):
-    '''
-    Args: 
-        df: Data frame or data series for plotting histogram on feature value distribution 
-        title_name: Name of histogram
-    Returns:
-        Histogram plot using matplotlib
-    '''
-    return df.plot(kind='bar', title=title_name).set(xlabel='\n' + title_name, ylabel='% to Total')
 
 
 # In[16]:
@@ -207,15 +220,6 @@ histogram(distr_dict['fhb_flag'], 'First Time Homebuyer')
 histogram(distr_dict['Ever_Delinquent'], 'Ever Delinquent')
 
 
-# In[20]:
-
-
-# Alternative way to create histogram method using feature as parameter
-def histogram_alt(feature):
-    df = distr_dict[feature]
-    title_name = feature.split('_', 1)[0].upper()
-    return df.plot(kind='bar', title=title_name).set(xlabel=title_name, ylabel='% to Total')
-
 
 # In[21]:
 
@@ -235,6 +239,8 @@ histogram_alt('FICO_new')
 histogram_alt('dti_new')
 
 
+# # Modeling
+
 # **Due to unbalanced target data, we will need to upsample or downsample one of the class. Here I chose to downsample never deliquenty loans** 
 #  - Select 10,000 per group (Ever Delinquent)
 
@@ -243,7 +249,7 @@ histogram_alt('dti_new')
 
 target_col_name = 'Ever_Delinquent'
 sample_size = 10000
-df_new =df.groupby(target_col_name,as_index=False).apply(lambda x: x.sample(sample_size)).reset_index()
+df_new = df.groupby(target_col_name,as_index=False).apply(lambda x: x.sample(sample_size)).reset_index()
 
 
 # In[25]:
@@ -450,33 +456,13 @@ for name, model in models:
     #msg = "%s: %f" % (name, roc_auc_score)
 
 
-# In[41]:
-
-
-# prepare configuration for cross validation test harness
-seed = 7
-
-# Compare accuracy score among different models
-results = []
-names = []
-scoring = 'accuracy'
-for name, model in models:
-	kfold = model_selection.KFold(n_splits=10, random_state=seed)
-	cv_results = model_selection.cross_val_score(model, X_train, y_train, cv=kfold, scoring=scoring)
-	results.append(cv_results)
-	names.append(name)
-	msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
-	print(msg)
-    
-# boxplot algorithm comparison
-fig = plt.figure()
-fig.suptitle('Algorithm Accuracy Comparison')
-ax = fig.add_subplot(111)
-plt.boxplot(results)
-ax.set_xticklabels(names)
-plt.show()
-
-
+"""
+Interpret this part!
+What is the ROC AUC score?
+Which algorithms are better?
+Why does the performance of some of the algorithms look similar?
+Does this plot indicate other work should be done?
+"""
 # In[42]:
 
 
@@ -510,7 +496,10 @@ plt.show()
   .loan_id.nunique()/df.groupby('Ever_Delinquent').loan_id.nunique()
 ).mul(100).round(1).astype(str) + '%'
 
-
+"""
+Regularization should be done as part of the model
+selection process above
+"""
 # ### Perform Regularization On Logistic Regression Classifier
 
 # In[44]:
@@ -519,13 +508,25 @@ plt.show()
 l1_penalty = [0, 0.1, 0.5, 1, 2, 5, 10, 20, 30, 50, 60, 80, 90, 100]
 regularization_dic = {}
 
+"""
+Be mindful of indentation in python. This loop isn't doing what you
+what it to. It's initializing many clf objects based on the l1_penalty
+then returning the last one, which you're fitting on. That's why your
+regularization_dic has 1 value at the max penalty instead of 1 key
+per l1_penalty.
+"""
 for penalty_param in l1_penalty:
     clf = LogisticRegression(penalty = 'l1', C = penalty_param)
-clf.fit(X_train, y_train)
-y_pred = clf.predict(X_test)
-regularization_dic[penalty_param] = roc_auc_score(y_test, y_pred)
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+    regularization_dic[penalty_param] = roc_auc_score(y_test, y_pred)
 
 
+"""
+Before sharing a notebook it's good practice to clear all the output
+and re-run all the cells. That ensures some else can reproduce the work 
+and will help you avoid problems caused by out-of-order code.
+"""
 # In[55]:
 
 
@@ -550,7 +551,20 @@ print(msg)
 y_pred = clf.predict(X_test)
 y_pred
 
+"""
+This _looks_ like it'll be your Evaluation section. If so, call it out
+as such. Here are a few recommendations on what to evaluate:
+- Show the most important features and discuss them
+- Plot the ROC of the training set vs. the test set
+- Plot the distribution (KDE) of scores on the train vs. test set
+- Plot the distribution (KDE) of scores for the "1" vs. "0" class
+on the test set get a sense of how well the classifier discriminates 
 
+Then bring it all home and evalute the actual business problem.
+Based on your prediction, the value of the home, and your assumption
+based on how early delinquencies translate to default - how does
+your model do versus a naive estimate?
+"""
 # In[47]:
 
 
