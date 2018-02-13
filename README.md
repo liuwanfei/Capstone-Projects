@@ -1,5 +1,6 @@
-# Capstone-Projects
-*Interesting data science projects I have worked on*
+# Capstone-Project
+ 
 
 - Predict Loan's Ever Delinquent Probablity
-- Predict Underwriting Time
+  Please find details in "Loan Ever Delinquent Prediction Project Write Up.pdf"
+ 
